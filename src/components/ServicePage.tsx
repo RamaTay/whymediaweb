@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, ChevronRight } from "lucide-react";
@@ -9,6 +9,8 @@ import ContentCreation3D from "./3d-objects/ContentCreation3D";
 import LogoDesign3D from "./3d-objects/LogoDesign3D";
 import AppDevelopment3D from "./3d-objects/AppDevelopment3D";
 import ScrollEffect3D from "./ScrollEffect3D";
+import { supabase } from "@/lib/supabaseClient";
+import { Database } from "@/types/database.types";
 
 interface ServiceData {
   id: string;
@@ -437,13 +439,171 @@ const services: Record<string, ServiceData> = {
   },
 };
 
+type Service = Database["public"]["Tables"]["Services"]["Row"];
+type ServiceDetail = Database["public"]["Tables"]["ServiceDetails"]["Row"];
+type FAQ = Database["public"]["Tables"]["FAQs"]["Row"];
+
 const ServicePage = () => {
   const { serviceId } = useParams<{ serviceId: string }>();
   const navigate = useNavigate();
-  const service =
-    serviceId && services[serviceId]
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [serviceDetail, setServiceDetail] = useState<ServiceDetail | null>(
+    null,
+  );
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [relatedServices, setRelatedServices] = useState<Service[]>([]);
+  const [relatedServicesLoading, setRelatedServicesLoading] = useState(false);
+
+  useEffect(() => {
+    if (serviceId) {
+      fetchServiceDetail();
+      fetchFaqs();
+      fetchRelatedServices();
+    }
+  }, [serviceId]);
+
+  const fetchServiceDetail = async () => {
+    try {
+      setLoading(true);
+      // First, try to find the service detail with the matching ID
+      const { data: serviceDetails, error: detailsError } = await supabase
+        .from("ServiceDetails")
+        .select("*, Services(name)")
+        .eq("service_id", serviceId)
+        .maybeSingle();
+
+      if (detailsError || !serviceDetails) {
+        // If not found by service_id, try to find by ID directly
+        const { data: serviceById, error: idError } = await supabase
+          .from("ServiceDetails")
+          .select("*, Services(name)")
+          .eq("id", serviceId)
+          .maybeSingle();
+
+        if (idError || !serviceById) {
+          // If still not found, try to find by name converted to slug
+          const { data: servicesByName, error: nameError } = await supabase
+            .from("ServiceDetails")
+            .select("*, Services(name)")
+            .ilike("name", serviceId.replace(/-/g, "%"));
+
+          if (nameError) throw nameError;
+          if (servicesByName && servicesByName.length > 0) {
+            setServiceDetail(servicesByName[0]);
+          } else {
+            // If still not found, use the fallback
+            console.log("Service not found in database, using fallback");
+            setServiceDetail(null);
+          }
+        } else {
+          setServiceDetail(serviceById);
+        }
+      } else {
+        setServiceDetail(serviceDetails);
+      }
+    } catch (error: any) {
+      console.error("Error fetching service detail:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFaqs = async () => {
+    try {
+      // Fetch FAQs related to this service
+      const { data, error } = await supabase
+        .from("FAQs")
+        .select("*")
+        .eq("service_id", serviceId);
+
+      if (error) throw error;
+      console.log("Fetched FAQs:", data);
+      setFaqs(data || []);
+
+      // If no service-specific FAQs found, try to fetch general FAQs
+      if (data.length === 0) {
+        const { data: generalFaqs, error: generalError } = await supabase
+          .from("FAQs")
+          .select("*")
+          .is("service_id", null);
+
+        if (!generalError && generalFaqs) {
+          console.log("Fetched general FAQs:", generalFaqs);
+          setFaqs(generalFaqs);
+        }
+      }
+    } catch (error: any) {
+      console.error("Error fetching FAQs:", error);
+    }
+  };
+
+  const fetchRelatedServices = async () => {
+    try {
+      setRelatedServicesLoading(true);
+      const { data, error } = await supabase
+        .from("Services")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+
+      // Filter out the current service
+      const filteredServices =
+        data?.filter((service) => service.id !== serviceId) || [];
+      console.log("Fetched related services:", filteredServices);
+      setRelatedServices(filteredServices);
+    } catch (error: any) {
+      console.error("Error fetching related services:", error);
+    } finally {
+      setRelatedServicesLoading(false);
+    }
+  };
+
+  // Use the fetched service detail or fall back to the static data
+  const service = serviceDetail
+    ? {
+        id: serviceDetail.id,
+        title: serviceDetail.name,
+        description: serviceDetail.description,
+        icon: getServiceIcon(serviceDetail.name),
+        details: serviceDetail.details || "",
+        longDescription: serviceDetail.long_description || "",
+        process: (serviceDetail.process as any[]) || [],
+        benefits: serviceDetail.benefits || [],
+        faq: faqs.map((faq) => ({
+          question: faq.question,
+          answer: faq.answer,
+        })),
+        cta: (serviceDetail.cta as any) || { title: "", description: "" },
+        portfolio: serviceDetail.graphic_design_portfolio || [],
+      }
+    : serviceId && services[serviceId]
       ? services[serviceId]
       : services["graphic-design"];
+
+  // Helper function to get the appropriate 3D icon based on service name
+  function getServiceIcon(name: string) {
+    const lowercaseName = name.toLowerCase();
+    if (
+      lowercaseName.includes("web") ||
+      lowercaseName.includes("development")
+    ) {
+      return <WebDevelopment3D scale={1} rotationSpeed={1} />;
+    } else if (
+      lowercaseName.includes("design") &&
+      !lowercaseName.includes("logo")
+    ) {
+      return <DesignServices3D scale={1} rotationSpeed={1} />;
+    } else if (lowercaseName.includes("logo")) {
+      return <LogoDesign3D scale={1} rotationSpeed={1} />;
+    } else if (lowercaseName.includes("content")) {
+      return <ContentCreation3D scale={1} rotationSpeed={1} />;
+    } else {
+      return <AppDevelopment3D scale={1} rotationSpeed={1} />;
+    }
+  }
 
   const handleContactClick = () => {
     navigate("/");
@@ -668,19 +828,29 @@ const ServicePage = () => {
           </div>
 
           <div className="max-w-4xl mx-auto">
-            {service.faq.map((item, index) => (
-              <motion.div
-                key={index}
-                className="mb-6 bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-              >
-                <h3 className="text-xl font-semibold mb-3">{item.question}</h3>
-                <p className="text-gray-600">{item.answer}</p>
-              </motion.div>
-            ))}
+            {service.faq && service.faq.length > 0 ? (
+              service.faq.map((item, index) => (
+                <motion.div
+                  key={index}
+                  className="mb-6 bg-white rounded-xl p-6 shadow-sm border border-gray-100"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                >
+                  <h3 className="text-xl font-semibold mb-3">
+                    {item.question}
+                  </h3>
+                  <p className="text-gray-600">{item.answer}</p>
+                </motion.div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">
+                  No FAQs available for this service yet.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -712,22 +882,27 @@ const ServicePage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {Object.values(services)
-              .filter((s) => s.id !== service.id)
-              .slice(0, 4)
-              .map((relatedService, index) => (
+          {relatedServicesLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-400"></div>
+            </div>
+          ) : relatedServices.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {relatedServices.slice(0, 4).map((relatedService, index) => (
                 <motion.div
-                  key={index}
+                  key={relatedService.id}
                   className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
                   whileHover={{
                     y: -10,
                     boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
                   }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
                 >
                   <div className="p-6">
                     <h3 className="text-xl font-semibold mb-3">
-                      {relatedService.title}
+                      {relatedService.name}
                     </h3>
                     <p className="text-gray-600 mb-4">
                       {relatedService.description}
@@ -741,7 +916,40 @@ const ServicePage = () => {
                   </div>
                 </motion.div>
               ))}
-          </div>
+            </div>
+          ) : (
+            // Fallback to static services if no data from Supabase
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {Object.values(services)
+                .filter((s) => s.id !== service.id)
+                .slice(0, 4)
+                .map((relatedService, index) => (
+                  <motion.div
+                    key={index}
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                    whileHover={{
+                      y: -10,
+                      boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+                    }}
+                  >
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold mb-3">
+                        {relatedService.title}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {relatedService.description}
+                      </p>
+                      <Link to={`/service/${relatedService.id}`}>
+                        <Button variant="outline" className="w-full">
+                          Learn More
+                          <ChevronRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </motion.div>
+                ))}
+            </div>
+          )}
         </div>
       </section>
     </div>
