@@ -1,5 +1,6 @@
 import { Suspense, useEffect } from "react";
 import { useRoutes, Routes, Route, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Home from "./components/home";
 import ServiceDetailsPage from "./components/ServiceDetailsPage";
 import ServicePage from "./components/ServicePage";
@@ -14,6 +15,14 @@ import routes from "tempo-routes";
 
 function App() {
   const location = useLocation();
+  const { i18n } = useTranslation();
+
+  // Set document direction based on language
+  useEffect(() => {
+    const dir = i18n.language === "ar" ? "rtl" : "ltr";
+    document.documentElement.dir = dir;
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
 
   // Scroll to top when route changes
   useEffect(() => {

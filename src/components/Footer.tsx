@@ -1,10 +1,12 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation("footer");
 
   // Handle navigation to team section in About page
   const handleTeamClick = (e) => {
@@ -35,21 +37,22 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="text-xl font-bold mb-4">
-              Why <span className="text-yellow-400">Media</span>
+              {t("whyMedia").split(" ")[0]}{" "}
+              <span className="text-yellow-400">
+                {t("whyMedia").split(" ")[1] || "Media"}
+              </span>
             </h3>
-            <p className="text-gray-400">
-              Where Ideas Meet Innovation – Your Digital Solutions Start Here!
-            </p>
+            <p className="text-gray-400">{t("tagline")}</p>
           </div>
           <div>
-            <h4 className="text-lg font-semibold mb-4">Services</h4>
+            <h4 className="text-lg font-semibold mb-4">{t("services")}</h4>
             <ul className="space-y-2 text-gray-400">
               <li>
                 <Link
                   to="/service/web-development"
                   className="hover:text-yellow-400"
                 >
-                  Web Development
+                  {t("webDevelopment")}
                 </Link>
               </li>
               <li>
@@ -57,7 +60,7 @@ const Footer = () => {
                   to="/service/graphic-design"
                   className="hover:text-yellow-400"
                 >
-                  Graphic Design
+                  {t("graphicDesign")}
                 </Link>
               </li>
               <li>
@@ -65,7 +68,7 @@ const Footer = () => {
                   to="/service/content-creation"
                   className="hover:text-yellow-400"
                 >
-                  Content Creation
+                  {t("contentCreation")}
                 </Link>
               </li>
               <li>
@@ -73,17 +76,17 @@ const Footer = () => {
                   to="/service/logo-design"
                   className="hover:text-yellow-400"
                 >
-                  Logo Design
+                  {t("logoDesign")}
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h4 className="text-lg font-semibold mb-4">Company</h4>
+            <h4 className="text-lg font-semibold mb-4">{t("company")}</h4>
             <ul className="space-y-2 text-gray-400">
               <li>
                 <Link to="/about" className="hover:text-yellow-400">
-                  About Us
+                  {t("aboutUs")}
                 </Link>
               </li>
               <li>
@@ -92,7 +95,7 @@ const Footer = () => {
                   className="hover:text-yellow-400"
                   onClick={handleTeamClick}
                 >
-                  Our Team
+                  {t("ourTeam")}
                 </a>
               </li>
               <li>
@@ -101,30 +104,30 @@ const Footer = () => {
                   className="hover:text-yellow-400"
                   onClick={handleCareersClick}
                 >
-                  Careers
+                  {t("careers")}
                 </a>
               </li>
             </ul>
           </div>
           <div>
-            <h4 className="text-lg font-semibold mb-4">Contact</h4>
+            <h4 className="text-lg font-semibold mb-4">{t("contact")}</h4>
             <ul className="space-y-2 text-gray-400">
               <li>
                 <a
                   href="mailto:info@whymaidua.com"
                   className="hover:text-yellow-400"
                 >
-                  Email: info@whymaidua.com
+                  {t("email")}
                 </a>
               </li>
               <li>
                 <a href="tel:+11234567890" className="hover:text-yellow-400">
-                  Phone: 0930429893
+                  {t("phone")}
                 </a>
               </li>
               <li>
                 <Link to="/#contact" className="hover:text-yellow-400">
-                  Address: Baramka Damascus Tajheez Area
+                  {t("address")}
                 </Link>
               </li>
             </ul>
@@ -132,7 +135,7 @@ const Footer = () => {
         </div>
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
           <p>
-            &copy; {new Date().getFullYear()} Why Maidua. All rights reserved.
+            &copy; {new Date().getFullYear()} Why Maidua. {t("copyright")}
           </p>
         </div>
       </div>

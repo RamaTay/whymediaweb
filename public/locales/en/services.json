@@ -1,0 +1,42 @@
+{
+  "title": "Our Services",
+  "ourServices": "Our",
+  "services": " Services",
+  "subtitle": "We offer a wide range of digital services to help your business grow and succeed in the digital landscape.",
+  "graphicDesign": {
+    "title": "Graphic Design",
+    "description": "Eye-catching visuals and designs that communicate your brand's message effectively and leave a lasting impression."
+  },
+  "logoDesign": {
+    "title": "Logo Design",
+    "description": "Professional and memorable logos that capture your brand's essence and help you stand out in the marketplace."
+  },
+  "webDevelopment": {
+    "title": "Web Development",
+    "description": "Custom websites and webapplications built with the latest technologies for optimal performance and user experience."
+  },
+  "socialMediaManagement": {
+    "title": "Social Media Management",
+    "description": "Strategic social media presence that builds community, increases engagement, and drives conversions for your brand."
+  },
+  "learnMore": "Learn More",
+  "tryAgain": "Try Again",
+  "errorLoading": "Error Loading Services",
+  "technicalSkills": "Technical Skills & Tools",
+  "viewDetails": "View Details",
+  "backToAllServices": "Back to All Services",
+  "getFreeConsultation": "Get a Free Consultation",
+  "our": "Our",
+  "process": "Process",
+  "processDescription": "We follow a structured approach to deliver exceptional results for every project.",
+  "benefitsOf": "Benefits of Our",
+  "benefitsDescription": "Here's how our services can help your business grow and succeed.",
+  "portfolio": "Portfolio",
+  "portfolioDescription": "Take a look at some of our recent work in",
+  "faq": "Frequently Asked Questions",
+  "faqDescription": "Find answers to common questions about our",
+  "noFaqs": "No FAQs available for this service yet.",
+  "contactUsToday": "Contact Us Today",
+  "exploreOtherServices": "Explore Other Services",
+  "exploreDescription": "Discover our full range of digital services to help your business grow."
+}

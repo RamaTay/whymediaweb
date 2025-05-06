@@ -87,6 +87,8 @@ export interface Database {
           service_id: string | null;
           created_at: string;
           updated_at: string | null;
+          question_ar: string | null;
+          answer_ar: string | null;
         };
         Insert: {
           id?: string;
@@ -95,6 +97,8 @@ export interface Database {
           service_id?: string | null;
           created_at?: string;
           updated_at?: string | null;
+          question_ar?: string | null;
+          answer_ar?: string | null;
         };
         Update: {
           id?: string;
@@ -103,6 +107,8 @@ export interface Database {
           service_id?: string | null;
           created_at?: string;
           updated_at?: string | null;
+          question_ar?: string | null;
+          answer_ar?: string | null;
         };
       };
     };

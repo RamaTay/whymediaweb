@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
+import { useTranslation } from "react-i18next";
 
 interface HeroSectionProps {
   onExploreClick?: () => void;
@@ -8,12 +9,29 @@ interface HeroSectionProps {
 }
 
 const EnhancedHeroSection = ({
-  onExploreClick = () => window.scrollTo({ top: 800, behavior: "smooth" }),
+  onExploreClick = () => {
+    const servicesSection = document.getElementById("services");
+    if (servicesSection) {
+      const header = document.querySelector("nav");
+      const headerHeight = header ? header.getBoundingClientRect().height : 0;
+      const elementPosition = servicesSection.getBoundingClientRect().top;
+      const offsetPosition =
+        elementPosition + window.pageYOffset - headerHeight - 20;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  },
   scrollY = 0,
 }: HeroSectionProps) => {
+  const { t } = useTranslation("hero");
   const [typedText, setTypedText] = useState("");
-  const fullText =
-    "Where Ideas Meet Innovation – Your Digital Solutions Start Here!";
+  const fullText = t(
+    "tagline",
+    "Where Ideas Meet Innovation – Your Digital Solutions Start Here!",
+  );
 
   // Typewriter effect
   useEffect(() => {
@@ -62,7 +80,9 @@ const EnhancedHeroSection = ({
             onClick={onExploreClick}
             className="h-14 px-8 text-lg font-semibold rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
           >
-            <span className="relative z-10">Explore Services</span>
+            <span className="relative z-10">
+              {t("exploreServices", "Explore Services")}
+            </span>
             <span className="absolute inset-0 w-full h-full bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-full"></span>
           </Button>
         </motion.div>

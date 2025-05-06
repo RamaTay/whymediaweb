@@ -20,7 +20,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
-import { motion } from "framer-motion";
 
 type Service = Database["public"]["Tables"]["Services"]["Row"];
 type ServiceInsert = Database["public"]["Tables"]["Services"]["Insert"];
@@ -36,11 +35,13 @@ const ServicesTable = () => {
   );
   const [formData, setFormData] = useState<ServiceInsert>({
     name: "",
+    name_ar: "",
     description: "",
+    description_ar: "",
     technical_skills_tools: [],
+    technical_skills_tools_ar: [],
   });
 
-  // Fetch services on component mount
   useEffect(() => {
     fetchServices();
     setupRealtimeSubscription();
@@ -88,19 +89,30 @@ const ServicesTable = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSkillsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleSkillsChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+    isArabic: boolean = false,
+  ) => {
     const skills = e.target.value
       .split("\n")
       .filter((skill) => skill.trim() !== "");
-    setFormData((prev) => ({ ...prev, technical_skills_tools: skills }));
+
+    if (isArabic) {
+      setFormData((prev) => ({ ...prev, technical_skills_tools_ar: skills }));
+    } else {
+      setFormData((prev) => ({ ...prev, technical_skills_tools: skills }));
+    }
   };
 
   const openAddDialog = () => {
     setCurrentService(null);
     setFormData({
       name: "",
+      name_ar: "",
       description: "",
+      description_ar: "",
       technical_skills_tools: [],
+      technical_skills_tools_ar: [],
     });
     setIsDialogOpen(true);
   };
@@ -109,8 +121,11 @@ const ServicesTable = () => {
     setCurrentService(service);
     setFormData({
       name: service.name,
+      name_ar: service.name_ar || "",
       description: service.description,
+      description_ar: service.description_ar || "",
       technical_skills_tools: service.technical_skills_tools || [],
+      technical_skills_tools_ar: service.technical_skills_tools_ar || [],
     });
     setIsDialogOpen(true);
   };
@@ -123,7 +138,6 @@ const ServicesTable = () => {
   const handleSubmit = async () => {
     try {
       if (currentService?.id) {
-        // Update existing service
         const { error } = await supabase
           .from("Services")
           .update({
@@ -134,7 +148,6 @@ const ServicesTable = () => {
 
         if (error) throw error;
       } else {
-        // Add new service
         const { error } = await supabase.from("Services").insert({
           ...formData,
           created_at: new Date().toISOString(),
@@ -214,9 +227,12 @@ const ServicesTable = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Skills/Tools</TableHead>
+                <TableHead>Name (EN)</TableHead>
+                <TableHead>Name (AR)</TableHead>
+                <TableHead>Description (EN)</TableHead>
+                <TableHead>Description (AR)</TableHead>
+                <TableHead>Skills/Tools (EN)</TableHead>
+                <TableHead>Skills/Tools (AR)</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -224,8 +240,17 @@ const ServicesTable = () => {
               {services.map((service) => (
                 <TableRow key={service.id}>
                   <TableCell className="font-medium">{service.name}</TableCell>
+                  <TableCell className="font-medium font-arabic" dir="rtl">
+                    {service.name_ar}
+                  </TableCell>
                   <TableCell className="max-w-xs truncate">
                     {service.description}
+                  </TableCell>
+                  <TableCell
+                    className="max-w-xs truncate font-arabic"
+                    dir="rtl"
+                  >
+                    {service.description_ar}
                   </TableCell>
                   <TableCell>
                     {service.technical_skills_tools &&
@@ -251,6 +276,37 @@ const ServicesTable = () => {
                       <span className="text-gray-400 text-sm">
                         No skills listed
                       </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {service.technical_skills_tools_ar &&
+                    service.technical_skills_tools_ar.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {service.technical_skills_tools_ar
+                          .slice(0, 3)
+                          .map((skill, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 bg-gray-100 text-xs rounded-full font-arabic"
+                              dir="rtl"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        {service.technical_skills_tools_ar.length > 3 && (
+                          <span
+                            className="px-2 py-1 bg-gray-100 text-xs rounded-full font-arabic"
+                            dir="rtl"
+                          >
+                            +{service.technical_skills_tools_ar.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span
+                        className="text-gray-400 text-sm font-arabic"
+                        dir="rtl"
+                      ></span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -280,83 +336,124 @@ const ServicesTable = () => {
         </div>
       )}
 
-      {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
             <DialogTitle>
               {currentService ? "Edit Service" : "Add New Service"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">
-                Service Name
-              </label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="e.g., Web Development"
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium">
+                  Service Name (English)
+                </label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Web Development"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="name_ar" className="text-sm font-medium">
+                  Service Name (العربية)
+                </label>
+                <Input
+                  id="name_ar"
+                  name="name_ar"
+                  value={formData.name_ar || ""}
+                  onChange={handleInputChange}
+                  placeholder="مثال: تطوير الويب"
+                  dir="rtl"
+                  className="font-arabic"
+                  required
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-medium">
-                Description
-              </label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Brief description of the service"
-                rows={3}
-                required
-              />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium">
+                  Description (English)
+                </label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Brief description of the service"
+                  rows={3}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="description_ar" className="text-sm font-medium">
+                  Description (العربية)
+                </label>
+                <Textarea
+                  id="description_ar"
+                  name="description_ar"
+                  value={formData.description_ar || ""}
+                  onChange={handleInputChange}
+                  placeholder="وصف مختصر للخدمة"
+                  rows={3}
+                  dir="rtl"
+                  className="font-arabic"
+                  required
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label htmlFor="skills" className="text-sm font-medium">
-                Technical Skills & Tools
-              </label>
-              <Textarea
-                id="skills"
-                name="skills"
-                value={formData.technical_skills_tools?.join("\n") || ""}
-                onChange={(e) => {
-                  const skillsArray = e.target.value.split("\n");
-                  setFormData((prev) => ({
-                    ...prev,
-                    technical_skills_tools: skillsArray,
-                  }));
-                }}
-                placeholder="Enter one skill per line"
-                rows={4}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    const textarea = e.target as HTMLTextAreaElement;
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const value = textarea.value;
 
-                    textarea.value =
-                      value.substring(0, start) + "\n" + value.substring(end);
-
-                    textarea.selectionStart = textarea.selectionEnd = start + 1;
-
-                    const skillsArray = textarea.value.split("\n");
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="skills" className="text-sm font-medium">
+                  Technical Skills & Tools (English)
+                </label>
+                <textarea
+                  id="skills"
+                  value={formData.technical_skills_tools?.join("\n") || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
                     setFormData((prev) => ({
                       ...prev,
-                      technical_skills_tools: skillsArray,
+                      technical_skills_tools: value.split("\n"),
                     }));
-                  }
-                }}
-              />
-              <p className="text-xs text-gray-500">
-                Enter one skill or tool per line
-              </p>
+                  }}
+                  placeholder="Enter one skill per line"
+                  rows={4}
+                  className="w-full border rounded-md p-2"
+                />
+                <p className="text-xs text-gray-500">
+                  Enter one skill or tool per line
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="skills_ar" className="text-sm font-medium">
+                  Technical Skills & Tools (العربية)
+                </label>
+                <textarea
+                  id="skills_ar"
+                  value={formData.technical_skills_tools_ar?.join("\n") || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData((prev) => ({
+                      ...prev,
+                      technical_skills_tools_ar: value.split("\n"),
+                    }));
+                  }}
+                  placeholder="أدخل مهارة واحدة في كل سطر"
+                  rows={4}
+                  dir="rtl"
+                  className="font-arabic w-full border rounded-md p-2"
+                />
+                <p className="text-xs text-gray-500 font-arabic" dir="rtl">
+                  أدخل مهارة أو أداة واحدة في كل سطر
+                </p>
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -373,7 +470,6 @@ const ServicesTable = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

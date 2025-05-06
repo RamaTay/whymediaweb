@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Card, CardContent } from "./ui/card";
+import { useTranslation } from "react-i18next";
 
 interface FormData {
   name: string;
@@ -14,6 +15,7 @@ interface FormData {
 }
 
 const ContactSection = () => {
+  const { t } = useTranslation("contact");
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
@@ -37,14 +39,17 @@ const ContactSection = () => {
 
   const validateForm = () => {
     const newErrors: Partial<FormData> = {};
-    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.name.trim())
+      newErrors.name = t("validation.name", "Name is required");
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = t("validation.email.required", "Email is required");
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
+      newErrors.email = t("validation.email.invalid", "Email is invalid");
     }
-    if (!formData.subject.trim()) newErrors.subject = "Subject is required";
-    if (!formData.message.trim()) newErrors.message = "Message is required";
+    if (!formData.subject.trim())
+      newErrors.subject = t("validation.subject", "Subject is required");
+    if (!formData.message.trim())
+      newErrors.message = t("validation.message", "Message is required");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -61,7 +66,15 @@ const ContactSection = () => {
   };
 
   return (
-    <section id="contact" className="py-20 relative overflow-hidden border-0">
+    <section
+      id="contact"
+      className="py-20 relative overflow-hidden border-0"
+      style={{
+        scrollMarginTop: "100px",
+        paddingTop: "1px",
+        marginTop: "-1px",
+      }}
+    >
       <div className="container mx-auto px-4 relative z-10">
         <motion.div
           className="text-center mb-12"
@@ -71,13 +84,15 @@ const ContactSection = () => {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-4xl font-bold mb-4">
-            <span className="text-black">Get In </span>
-            <span className="text-yellow-400">Touch</span>
+            <span className="text-black">{t("get", "Get In ")}</span>
+            <span className="text-yellow-500">{t("touch", "Touch")}</span>
           </h2>
 
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Have a project in mind or want to learn more about our services?
-            Send us a message and we'll get back to you as soon as possible.
+            {t(
+              "subtitle",
+              "Have a project in mind or want to learn more about our services? Send us a message and we'll get back to you as soon as possible.",
+            )}
           </p>
         </motion.div>
         <div className="max-w-6xl mx-auto">
@@ -92,10 +107,13 @@ const ContactSection = () => {
                 >
                   <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                   <h3 className="text-2xl font-bold text-green-600 mb-2">
-                    Message Sent Successfully!
+                    {t("success.title", "Message Sent Successfully!")}
                   </h3>
                   <p className="text-gray-600">
-                    Thank you for reaching out. We'll get back to you shortly.
+                    {t(
+                      "success.message",
+                      "Thank you for reaching out. We'll get back to you shortly.",
+                    )}
                   </p>
                 </motion.div>
               ) : (
@@ -106,14 +124,14 @@ const ContactSection = () => {
                         htmlFor="name"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        Your Name
+                        {t("form.name.label", "Your Name")}
                       </label>
                       <Input
                         id="name"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
-                        placeholder="John Doe"
+                        placeholder={t("form.name.placeholder", "John Doe")}
                         className={`w-full transition-all ${errors.name ? "border-red-500" : "focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"}`}
                       />
                       {errors.name && (
@@ -127,7 +145,7 @@ const ContactSection = () => {
                         htmlFor="email"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        Email Address
+                        {t("form.email.label", "Email Address")}
                       </label>
                       <Input
                         id="email"
@@ -135,7 +153,10 @@ const ContactSection = () => {
                         type="email"
                         value={formData.email}
                         onChange={handleChange}
-                        placeholder="john@example.com"
+                        placeholder={t(
+                          "form.email.placeholder",
+                          "john@example.com",
+                        )}
                         className={`w-full transition-all ${errors.email ? "border-red-500" : "focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"}`}
                       />
                       {errors.email && (
@@ -150,14 +171,17 @@ const ContactSection = () => {
                       htmlFor="subject"
                       className="block text-sm font-medium text-gray-700 mb-1"
                     >
-                      Subject
+                      {t("form.subject.label", "Subject")}
                     </label>
                     <Input
                       id="subject"
                       name="subject"
                       value={formData.subject}
                       onChange={handleChange}
-                      placeholder="How can we help you?"
+                      placeholder={t(
+                        "form.subject.placeholder",
+                        "How can we help you?",
+                      )}
                       className={`w-full transition-all ${errors.subject ? "border-red-500" : "focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"}`}
                     />
                     {errors.subject && (
@@ -171,14 +195,17 @@ const ContactSection = () => {
                       htmlFor="message"
                       className="block text-sm font-medium text-gray-700 mb-1"
                     >
-                      Your Message
+                      {t("form.message.label", "Your Message")}
                     </label>
                     <Textarea
                       id="message"
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
-                      placeholder="Tell us about your project or inquiry..."
+                      placeholder={t(
+                        "form.message.placeholder",
+                        "Tell us about your project or inquiry...",
+                      )}
                       rows={5}
                       className={`w-full transition-all ${errors.message ? "border-red-500" : "focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"}`}
                     />
@@ -197,12 +224,12 @@ const ContactSection = () => {
                       {formStatus === "idle" ? (
                         <>
                           <Send className="mr-2 h-5 w-5" />
-                          Send Message
+                          {t("form.button", "Send Message")}
                         </>
                       ) : (
                         <div className="flex items-center">
                           <div className="animate-spin mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                          Sending...
+                          {t("form.sending", "Sending...")}
                         </div>
                       )}
                     </Button>
@@ -215,8 +242,10 @@ const ContactSection = () => {
                     >
                       <AlertCircle className="h-5 w-5 mr-2" />
                       <span>
-                        There was an error sending your message. Please try
-                        again.
+                        {t(
+                          "error.message",
+                          "There was an error sending your message. Please try again.",
+                        )}
                       </span>
                     </motion.div>
                   )}

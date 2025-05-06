@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import ScrollEffect3D from "./ScrollEffect3D";
 import { ScrollProgress } from "./ui/scroll-progress";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const Header = () => {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [activeSection, setActiveSection] = useState("hero");
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation("header");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,49 +38,85 @@ const Header = () => {
   const navLinks = [
     {
       href: "/",
-      label: "Home",
+      label: t("home", "Home"),
       active: location.pathname === "/" && activeSection === "hero",
       isExternal: true,
     },
     {
       href: "/services",
-      label: "Services",
-      active:
-        location.pathname.includes("/services") ||
-        location.pathname.includes("/service"),
+      label: t("services", "Services"),
+      active: location.pathname.includes("/services"),
       isExternal: true,
     },
     {
       href: "/about",
-      label: "About Us",
+      label: t("aboutUs", "About Us"),
       active: location.pathname.includes("/about"),
       isExternal: true,
     },
     {
       href: "/#contact",
-      label: "Contact",
+      label: t("contact", "Contact"),
       active: location.pathname === "/" && activeSection === "contact",
       isExternal: false,
     },
   ];
 
+  const handleSectionScroll = (sectionId) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      const header = document.querySelector("nav");
+      const headerHeight = header?.getBoundingClientRect().height || 0;
+      const additionalPadding = 30;
+
+      const sectionRect = section.getBoundingClientRect();
+      const sectionTop = sectionRect.top + window.pageYOffset;
+      const targetPosition = sectionTop - headerHeight - additionalPadding;
+
+      section.style.scrollMarginTop = "0";
+      section.style.paddingTop = "0";
+      section.style.marginTop = "0";
+
+      window.scrollTo({
+        top: targetPosition,
+        behavior: "smooth",
+      });
+
+      setTimeout(() => {
+        const currentPosition = window.pageYOffset;
+        const visibleHeight = window.innerHeight;
+        const sectionHeight = section.offsetHeight;
+
+        if (currentPosition + visibleHeight < sectionTop + sectionHeight) {
+          window.scrollTo({
+            top:
+              sectionTop -
+              headerHeight -
+              additionalPadding +
+              (sectionHeight - visibleHeight) / 2,
+            behavior: "auto",
+          });
+        }
+      }, 800);
+    }
+  };
+
   const handleContactClick = () => {
     if (location.pathname !== "/") {
       navigate("/#contact");
       setTimeout(() => {
-        const contactSection = document.getElementById("contact");
-        if (contactSection) {
-          contactSection.scrollIntoView({ behavior: "smooth" });
-        }
-      }, 100);
+        handleSectionScroll("contact");
+      }, 300);
     } else {
       const contactSection = document.getElementById("contact");
       if (contactSection) {
-        contactSection.scrollIntoView({ behavior: "smooth" });
+        contactSection.style.scrollMarginTop = "0";
+        contactSection.style.paddingTop = "0";
+        contactSection.style.marginTop = "0";
       }
+      handleSectionScroll("contact");
     }
   };
-
   return (
     <>
       <ScrollProgress
@@ -93,10 +132,9 @@ const Header = () => {
             <Link to="/">
               <motion.div
                 className="h-10 w-auto"
-                whileHover={{ scale: 1.1, opacity: 0.8 }}
+                whileHover={{ scale: 1.1 }}
                 transition={{ type: "spring", stiffness: 300, damping: 15 }}
               >
-                {" "}
                 <img
                   src="/images/Y logo 2 (1).png"
                   alt="logo"
@@ -107,7 +145,7 @@ const Header = () => {
           </div>
 
           <motion.div
-            className="hidden md:flex space-x-8"
+            className="hidden md:flex gap-8"
             animate={{
               y: scrollPosition > 100 ? -5 : 0,
               opacity: scrollPosition > 100 ? 0.9 : 1,
@@ -124,7 +162,7 @@ const Header = () => {
                 className="inline-block"
                 scrollMultiplier={0.8 + index * 0.1}
               >
-                {link.label === "Home" ? (
+                {link.label === t("home", "Home") ? (
                   <motion.button
                     onClick={() => {
                       if (location.pathname !== "/") {
@@ -142,7 +180,7 @@ const Header = () => {
                   >
                     {link.label}
                   </motion.button>
-                ) : link.label === "Contact" ? (
+                ) : link.label === t("contact", "Contact") ? (
                   <motion.button
                     onClick={handleContactClick}
                     className={`bg-transparent border-none outline-none text-gray-800 hover:text-yellow-400 transition-colors ${
@@ -170,23 +208,26 @@ const Header = () => {
             ))}
           </motion.div>
 
-          <div className="md:hidden">
-            <button className="text-gray-800 hover:text-yellow-400 transition-colors">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
+            <div className="md:hidden">
+              <button className="text-gray-800 hover:text-yellow-400 transition-colors">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </nav>

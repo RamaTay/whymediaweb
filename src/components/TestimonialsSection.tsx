@@ -1,57 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-
-interface Testimonial {
-  id: number;
-  name: string;
-  role: string;
-  company: string;
-  emoji: string;
-  preview: string;
-  fullReview: string;
-}
-
-const testimonials: Testimonial[] = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    role: "Marketing Director",
-    company: "TechGrowth Inc",
-    preview: "Maidua transformed our online presence...",
-    fullReview:
-      "Maidua transformed our online presence with their exceptional web development services. The team was professional, responsive, and delivered beyond our expectations.",
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    role: "CEO",
-    company: "Innovate Solutions",
-    preview: "Working with Maidua was a game-changer...",
-    fullReview:
-      "Working with Maidua was a game-changer for our startup. Their creative designs and technical expertise helped us stand out in a competitive market.",
-  },
-  {
-    id: 3,
-    name: "Emily Rodriguez",
-    role: "Product Manager",
-    company: "Digital Ventures",
-    preview: "The attention to detail was impressive...",
-    fullReview:
-      "The attention to detail was impressive! Maidua's team took the time to understand our brand and delivered a website that perfectly captures our vision and values.",
-  },
-  {
-    id: 4,
-    name: "David Thompson",
-    role: "Creative Director",
-    company: "Artisan Media",
-    preview: "As a design professional myself...",
-    fullReview:
-      "As a design professional myself, I have high standards. Maidua exceeded them all with their innovative approach to our content creation needs. Highly recommended!",
-  },
-];
+import { useTranslation } from "react-i18next";
 
 const TestimonialsSection = () => {
+  const { t } = useTranslation("testimonials");
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -77,9 +30,7 @@ const TestimonialsSection = () => {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
+      transition: { staggerChildren: 0.2 },
     },
   };
 
@@ -88,20 +39,18 @@ const TestimonialsSection = () => {
     visible: {
       x: 0,
       opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 12,
-      },
+      transition: { type: "spring", stiffness: 100, damping: 12 },
     },
   };
+
+  const testimonialIds = [0, 1, 2, 3];
 
   return (
     <section
       id="testimonials-section"
-      className="py-20 px-4 md:px-8 lg:px-16 overflow-hidden border-0"
+      className="py-20 px-4 md:px-8 lg:px-16 overflow-hidden border-0 relative"
     >
-      {/* Particle effect background */}
+      {/* تأثير الخلفية (particles) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {Array.from({ length: 50 }).map((_, i) => (
           <motion.div
@@ -138,14 +87,16 @@ const TestimonialsSection = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl font-bold mb-4">
-            <span className="text-black">What Our </span>
-            <span className="text-yellow-400">Clients</span>
-            <span className="text-black"> Say</span>
+            <span className="text-black">{t("title", "What Our ")}</span>
+            <span className="text-yellow-500">{t("clients", "Clients")}</span>
+            <span className="text-black">{t("say", "Say")}</span>
           </h2>
 
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Don't just take our word for it. Here's what our clients have to say
-            about our services.
+            {t(
+              "subtitle",
+              "Don't just take our word for it. Here's what our clients say about our services.",
+            )}
           </p>
         </motion.div>
 
@@ -155,29 +106,30 @@ const TestimonialsSection = () => {
           animate={isVisible ? "visible" : "hidden"}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
-          {testimonials.map((testimonial) => (
+          {testimonialIds.map((id) => (
             <motion.div
-              key={testimonial.id}
+              key={id}
               variants={itemVariants}
               whileHover={{ scale: 1.05, zIndex: 10 }}
               className="cursor-pointer"
             >
-              <Card
-                className={`rounded-3xl transition-all duration-300 h-full bg-white border-0 shadowh`}
-              >
-                <CardContent className="p-3 flex flex-col items-center">
+              <Card className="rounded-3xl transition-all duration-300 h-full bg-white border-0 shadow-lg">
+                <CardContent className="p-6 flex flex-col items-center h-full">
                   <div className="mb-4 relative flex justify-center w-full">
-                    <div className="text-4xl mb-2">{testimonial.emoji}</div>
+                    <div className="text-4xl mb-2">
+                      {t(`testimonials.${id}.emoji`, "💬")}
+                    </div>
                   </div>
-
-                  <h3 className="font-bold text-lg mb-1">{testimonial.name}</h3>
-                  <p className="text-sm h-10 text-muted-foreground mb-3">
-                    {testimonial.role}, {testimonial.company}
+                  <h3 className="font-bold text-lg mb-1">
+                    {t(`testimonials.${id}.name`, "Client Name")}
+                  </h3>
+                  <p className="text-sm h-10 text-muted-foreground mb-4">
+                    {t(`testimonials.${id}.role`, "Role")},{" "}
+                    {t(`testimonials.${id}.company`, "Company")}
                   </p>
-
-                  <div className="text-center">
-                    <p className="text-sm leading-relaxed">
-                      {testimonial.fullReview}
+                  <div className="flex-grow flex items-center">
+                    <p className="text-sm text-justify text-align-last-center hyphens-auto">
+                      {t(`testimonials.${id}.review`, "Review text")}
                     </p>
                   </div>
                 </CardContent>

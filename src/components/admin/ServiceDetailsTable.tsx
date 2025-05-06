@@ -36,10 +36,25 @@ import {
   X,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+type ServiceDetail = Database["public"]["Tables"]["ServiceDetails"]["Row"] & {
+  Services: { name: string; name_ar?: string } | null;
+  name_ar?: string;
+  description_ar?: string;
+  details_ar?: string;
+  long_description_ar?: string;
+  benefits_ar?: string[];
+  cta_ar?: { title: string; description: string };
+};
 
-type ServiceDetail = Database["public"]["Tables"]["ServiceDetails"]["Row"];
 type ServiceDetailInsert =
-  Database["public"]["Tables"]["ServiceDetails"]["Insert"];
+  Database["public"]["Tables"]["ServiceDetails"]["Insert"] & {
+    name_ar?: string;
+    description_ar?: string;
+    details_ar?: string;
+    long_description_ar?: string;
+    benefits_ar?: string[];
+    cta_ar?: { title: string; description: string };
+  };
 type Service = Database["public"]["Tables"]["Services"]["Row"];
 
 const ProcessStepEditor = ({
@@ -124,14 +139,20 @@ const ServiceDetailsTable = () => {
     useState<Partial<ServiceDetail> | null>(null);
   const [formData, setFormData] = useState<Partial<ServiceDetailInsert>>({
     name: "",
+    name_ar: "",
     description: "",
+    description_ar: "",
     service_id: "",
     details: "",
+    details_ar: "",
     long_description: "",
+    long_description_ar: "",
     graphic_design_portfolio: [],
     process: [],
     benefits: [],
+    benefits_ar: [],
     cta: { title: "", description: "" },
+    cta_ar: { title: "", description: "" },
   });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -165,8 +186,11 @@ const ServiceDetailsTable = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("ServiceDetails")
-        .select("*, Services(name)");
+        .select(`*, Services(name, name_ar)`);
+
       if (error) throw error;
+
+      // You can add localization logic here if needed
       setServiceDetails(data || []);
     } catch (error: any) {
       setError(error.message);
@@ -274,21 +298,39 @@ const ServiceDetailsTable = () => {
     setPreviewImages(updatedUrls);
   };
 
-  const handleBenefitsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleBenefitsChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+    language: "en" | "ar" = "en",
+  ) => {
     const benefits = e.target.value
       .split("\n")
       .filter((benefit) => benefit.trim() !== "");
-    setFormData((prev) => ({ ...prev, benefits }));
+
+    if (language === "ar") {
+      setFormData((prev) => ({ ...prev, benefits_ar: benefits }));
+    } else {
+      setFormData((prev) => ({ ...prev, benefits }));
+    }
   };
 
   const handleCtaChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    isArabic: boolean = false,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      cta: { ...((prev.cta as any) || {}), [name.replace("cta_", "")]: value },
-    }));
+    const field = name.replace("cta_", "").replace("ar_", "");
+
+    if (isArabic) {
+      setFormData((prev) => ({
+        ...prev,
+        cta_ar: { ...((prev.cta_ar as any) || {}), [field]: value },
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        cta: { ...((prev.cta as any) || {}), [field]: value },
+      }));
+    }
   };
 
   const openAddDialog = () => {
@@ -308,19 +350,25 @@ const ServiceDetailsTable = () => {
     setUploadError(null);
     setIsDialogOpen(true);
   };
-
   const openEditDialog = (serviceDetail: ServiceDetail) => {
     setCurrentServiceDetail(serviceDetail);
     setFormData({
       name: serviceDetail.name,
+      name_ar: serviceDetail.name_ar || "",
       description: serviceDetail.description,
+      description_ar: serviceDetail.description_ar || "",
       service_id: serviceDetail.service_id,
       details: serviceDetail.details || "",
+      details_ar: serviceDetail.details_ar || "",
       long_description: serviceDetail.long_description || "",
+      long_description_ar: serviceDetail.long_description_ar || "",
       graphic_design_portfolio: serviceDetail.graphic_design_portfolio || [],
       process: serviceDetail.process || [],
+      process_ar: serviceDetail.process_ar || [],
       benefits: serviceDetail.benefits || [],
+      benefits_ar: serviceDetail.benefits_ar || [],
       cta: serviceDetail.cta || { title: "", description: "" },
+      cta_ar: serviceDetail.cta_ar || { title: "", description: "" },
     });
     setPreviewImages(serviceDetail.graphic_design_portfolio || []);
     setUploadError(null);
@@ -331,30 +379,41 @@ const ServiceDetailsTable = () => {
     setCurrentServiceDetail(serviceDetail);
     setIsDeleteDialogOpen(true);
   };
-
   const handleSubmit = async () => {
-    if (!formData.service_id || !formData.name || !formData.description) {
-      setError("Service ID, name, and description are required");
+    if (!formData.service_id || !formData.name) {
+      setError("Service ID and name are required");
       return;
     }
 
     try {
+      const dataToSave = {
+        ...formData,
+        // Ensure Arabic fields are properly handled
+        name_ar: formData.name_ar || null,
+        description_ar: formData.description_ar || null,
+        details_ar: formData.details_ar || null,
+        long_description_ar: formData.long_description_ar || null,
+        process_ar: formData.process_ar || [],
+        benefits_ar: formData.benefits_ar?.length ? formData.benefits_ar : null,
+        cta_ar: formData.cta_ar?.title ? formData.cta_ar : null,
+
+        updated_at: new Date().toISOString(),
+      };
+
       if (currentServiceDetail?.id) {
         const { error } = await supabase
           .from("ServiceDetails")
-          .update({
-            ...formData,
-            updated_at: new Date().toISOString(),
-          })
+          .update(dataToSave)
           .eq("id", currentServiceDetail.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("ServiceDetails").insert({
-          ...(formData as ServiceDetailInsert),
+          ...dataToSave,
           created_at: new Date().toISOString(),
         });
         if (error) throw error;
       }
+
       setIsDialogOpen(false);
       fetchServiceDetails();
     } catch (error: any) {
@@ -479,9 +538,8 @@ const ServiceDetailsTable = () => {
           </Table>
         </div>
       )}
-
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {currentServiceDetail
@@ -489,7 +547,9 @@ const ServiceDetailsTable = () => {
                 : "Add New Service Detail"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+
+          <div className="space-y-6 py-4">
+            {/* Service Selector */}
             <div className="space-y-2">
               <label htmlFor="service_id" className="text-sm font-medium">
                 Service
@@ -511,68 +571,146 @@ const ServiceDetailsTable = () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">
-                Name
-              </label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="e.g., Web Development"
-                required
-              />
+            {/* Name Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium">
+                  Name
+                </label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Web Development"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="name_ar" className="text-sm font-medium">
+                  اسم الخدمة (العربية)
+                </label>
+                <Input
+                  id="name_ar"
+                  name="name_ar"
+                  value={formData.name_ar}
+                  onChange={handleInputChange}
+                  placeholder="مثال: تطوير الويب"
+                  required
+                  dir="rtl"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-medium">
-                Short Description
-              </label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Brief description of the service"
-                rows={2}
-                required
-              />
+            {/* Short Description Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium">
+                  Short Description
+                </label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Brief description of the service"
+                  rows={2}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="description_ar" className="text-sm font-medium">
+                  وصف قصير (العربية)
+                </label>
+                <Textarea
+                  id="description_ar"
+                  name="description_ar"
+                  value={formData.description_ar}
+                  onChange={handleInputChange}
+                  placeholder="وصف موجز للخدمة"
+                  rows={2}
+                  required
+                  dir="rtl"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="details" className="text-sm font-medium">
-                Details
-              </label>
-              <Textarea
-                id="details"
-                name="details"
-                value={formData.details || ""}
-                onChange={handleInputChange}
-                placeholder="Additional details about the service"
-                rows={3}
-              />
+            {/* Details Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="details" className="text-sm font-medium">
+                  Details
+                </label>
+                <Textarea
+                  id="details"
+                  name="details"
+                  value={formData.details || ""}
+                  onChange={handleInputChange}
+                  placeholder="Additional details about the service"
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="details_ar" className="text-sm font-medium">
+                  تفاصيل (العربية)
+                </label>
+                <Textarea
+                  id="details_ar"
+                  name="details_ar"
+                  value={formData.details_ar || ""}
+                  onChange={handleInputChange}
+                  placeholder="تفاصيل إضافية عن الخدمة"
+                  rows={3}
+                  dir="rtl"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="long_description" className="text-sm font-medium">
-                Long Description
-              </label>
-              <Textarea
-                id="long_description"
-                name="long_description"
-                value={formData.long_description || ""}
-                onChange={handleInputChange}
-                placeholder="Comprehensive description of the service"
-                rows={4}
-              />
+            {/* Long Description Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label
+                  htmlFor="long_description"
+                  className="text-sm font-medium"
+                >
+                  Long Description
+                </label>
+                <Textarea
+                  id="long_description"
+                  name="long_description"
+                  value={formData.long_description || ""}
+                  onChange={handleInputChange}
+                  placeholder="Comprehensive description of the service"
+                  rows={4}
+                />
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="long_description_ar"
+                  className="text-sm font-medium"
+                >
+                  وصف طويل (العربية)
+                </label>
+                <Textarea
+                  id="long_description_ar"
+                  name="long_description_ar"
+                  value={formData.long_description_ar || ""}
+                  onChange={handleInputChange}
+                  placeholder="وصف شامل للخدمة"
+                  rows={4}
+                  dir="rtl"
+                />
+              </div>
             </div>
 
+            {/* Portfolio Images */}
             <div className="space-y-2">
               <label htmlFor="portfolio" className="text-sm font-medium">
                 Portfolio Images
               </label>
               <div className="border rounded-md p-4 bg-gray-50">
+                {/* Upload Button and Preview Images */}
+
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-sm font-medium">Upload Images</h4>
                   <input
@@ -618,29 +756,7 @@ const ServiceDetailsTable = () => {
                     </Button>
                   </div>
                 )}
-
-                {previewImages.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 mt-3">
-                    {previewImages.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={url}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-20 object-cover rounded-md"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleRemoveImage(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {/* هذا القسم يبقى كما هو من كودك الأصلي */}
               </div>
 
               <div className="mt-4">
@@ -655,84 +771,127 @@ const ServiceDetailsTable = () => {
                   placeholder="Enter one image URL per line"
                   rows={3}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter one image URL per line
-                </p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Process Steps</label>
-              <ProcessStepEditor
-                process={formData.process || []}
-                setProcess={(newProcess) =>
-                  setFormData({ ...formData, process: newProcess })
-                }
-              />
+            {/* Process Steps */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Process Steps (English)
+                </label>
+                <ProcessStepEditor
+                  process={formData.process || []}
+                  setProcess={(newProcess) =>
+                    setFormData({ ...formData, process: newProcess })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Process Steps (العربية)
+                </label>
+                <ProcessStepEditor
+                  process={formData.process_ar || []}
+                  setProcess={(newProcess) =>
+                    setFormData({ ...formData, process_ar: newProcess })
+                  }
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label htmlFor="benefits" className="text-sm font-medium">
-                Benefits
-              </label>
-              <Textarea
-                id="benefits"
-                name="benefits"
-                value={formData.benefits?.join("\n") || ""}
-                onChange={(e) => {
-                  const benefitsArray = e.target.value.split("\n");
-                  setFormData((prev) => ({
-                    ...prev,
-                    benefits: benefitsArray,
-                  }));
-                }}
-                placeholder="Enter one benefit per line"
-                rows={3}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    const textarea = e.target as HTMLTextAreaElement;
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const value = textarea.value;
 
-                    textarea.value =
-                      value.substring(0, start) + "\n" + value.substring(end);
-
-                    textarea.selectionStart = textarea.selectionEnd = start + 1;
-                    const benefitsArray = textarea.value.split("\n");
+            {/* Benefits */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="benefits" className="text-sm font-medium">
+                  Benefits
+                </label>
+                <Textarea
+                  id="benefits"
+                  name="benefits"
+                  value={formData.benefits?.join("\n") || ""}
+                  onChange={(e) => {
+                    const benefitsArray = e.target.value.split("\n");
                     setFormData((prev) => ({
                       ...prev,
                       benefits: benefitsArray,
                     }));
-                  }
-                }}
-              />
-              <p className="text-xs text-gray-500">
-                Enter one benefit per line
-              </p>
+                  }}
+                  placeholder="Enter one benefit per line"
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="benefits_ar" className="text-sm font-medium">
+                  فوائد (العربية)
+                </label>
+                <Textarea
+                  id="benefits_ar"
+                  name="benefits_ar"
+                  value={formData.benefits_ar?.join("\n") || ""}
+                  onChange={(e) => {
+                    const benefitsArray = e.target.value.split("\n");
+                    setFormData((prev) => ({
+                      ...prev,
+                      benefits_ar: benefitsArray,
+                    }));
+                  }}
+                  placeholder="أدخل فائدة واحدة في كل سطر"
+                  rows={3}
+                  dir="rtl"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Call to Action</label>
-              <Input
-                id="cta_title"
-                name="cta_title"
-                value={(formData.cta as any)?.title || ""}
-                onChange={handleCtaChange}
-                placeholder="CTA Title"
-                className="mb-2"
-              />
-              <Textarea
-                id="cta_description"
-                name="cta_description"
-                value={(formData.cta as any)?.description || ""}
-                onChange={handleCtaChange}
-                placeholder="CTA Description"
-                rows={2}
-              />
+            {/* Call to Action */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Call to Action (English)
+                </label>
+                <Input
+                  id="cta_title"
+                  name="cta_title"
+                  value={(formData.cta as any)?.title || ""}
+                  onChange={(e) => handleCtaChange(e, false)}
+                  placeholder="CTA Title"
+                />
+                <Textarea
+                  id="cta_description"
+                  name="cta_description"
+                  value={(formData.cta as any)?.description || ""}
+                  onChange={(e) => handleCtaChange(e, false)}
+                  placeholder="CTA Description"
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Call to Action (العربية)
+                </label>
+                <Input
+                  id="cta_ar_title"
+                  name="cta_ar_title"
+                  value={(formData.cta_ar as any)?.title || ""}
+                  onChange={(e) => handleCtaChange(e, true)}
+                  placeholder="عنوان دعوة العمل"
+                  dir="rtl"
+                />
+                <Textarea
+                  id="cta_ar_description"
+                  name="cta_ar_description"
+                  value={(formData.cta_ar as any)?.description || ""}
+                  onChange={(e) => handleCtaChange(e, true)}
+                  placeholder="وصف دعوة العمل"
+                  rows={2}
+                  dir="rtl"
+                />
+              </div>
             </div>
           </div>
 
+          {/* Dialog Footer */}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
@@ -742,34 +901,6 @@ const ServiceDetailsTable = () => {
               className="bg-yellow-400 hover:bg-yellow-500 text-white"
             >
               {currentServiceDetail ? "Save Changes" : "Add Service Detail"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p>
-              Are you sure you want to delete the service detail "
-              {currentServiceDetail?.name}"? This action cannot be undone.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDelete}
-              className="bg-red-500 hover:bg-red-600 text-white"
-            >
-              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

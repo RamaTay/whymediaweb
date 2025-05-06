@@ -45,6 +45,8 @@ const FaqTable = () => {
     question: "",
     answer: "",
     service_id: null,
+    question_ar: "", // إضافة الحقل للسؤال بالعربية
+    answer_ar: "", // إضافة الحقل للإجابة بالعربية
   });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -74,7 +76,13 @@ const FaqTable = () => {
 
   const openAddDialog = () => {
     setIsEditing(false);
-    setFormData({ question: "", answer: "", service_id: null });
+    setFormData({
+      question: "",
+      answer: "",
+      service_id: null,
+      question_ar: "",
+      answer_ar: "",
+    });
     setDialogOpen(true);
   };
 
@@ -85,6 +93,8 @@ const FaqTable = () => {
       question: faq.question,
       answer: faq.answer,
       service_id: faq.service_id,
+      question_ar: faq.question_ar, // تحميل السؤال بالعربية
+      answer_ar: faq.answer_ar, // تحميل الجواب بالعربية
     });
     setDialogOpen(true);
   };
@@ -97,26 +107,30 @@ const FaqTable = () => {
   const handleSubmit = async () => {
     if (!formData.question || !formData.answer) return;
 
+    const dataToInsert = {
+      question: formData.question,
+      answer: formData.answer,
+      service_id: formData.service_id,
+      question_ar: formData.question_ar, // تضمين السؤال بالعربية
+      answer_ar: formData.answer_ar, // تضمين الجواب بالعربية
+    };
+
     if (isEditing) {
-      // Update existing FAQ
+      // تحديث FAQ الحالي
       await supabase
         .from("FAQs")
         .update({
           question: formData.question,
           answer: formData.answer,
           service_id: formData.service_id,
+          question_ar: formData.question_ar, // تحديث السؤال بالعربية
+          answer_ar: formData.answer_ar, // تحديث الجواب بالعربية
           updated_at: new Date().toISOString(),
         })
         .eq("id", currentFaqId);
     } else {
-      // Add new FAQ
-      await supabase.from("FAQs").insert([
-        {
-          question: formData.question,
-          answer: formData.answer,
-          service_id: formData.service_id,
-        },
-      ]);
+      // إضافة FAQ جديد
+      await supabase.from("FAQs").insert([dataToInsert]);
     }
 
     resetForm();
@@ -131,7 +145,13 @@ const FaqTable = () => {
   };
 
   const resetForm = () => {
-    setFormData({ question: "", answer: "", service_id: null });
+    setFormData({
+      question: "",
+      answer: "",
+      service_id: null,
+      question_ar: "",
+      answer_ar: "",
+    });
     setCurrentFaqId(null);
     setDialogOpen(false);
     setIsEditing(false);
@@ -159,20 +179,63 @@ const FaqTable = () => {
               <DialogTitle>{isEditing ? "Edit FAQ" : "Add FAQ"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <Input
-                placeholder="Question"
-                value={formData.question}
-                onChange={(e) =>
-                  setFormData({ ...formData, question: e.target.value })
-                }
-              />
-              <Textarea
-                placeholder="Answer"
-                value={formData.answer}
-                onChange={(e) =>
-                  setFormData({ ...formData, answer: e.target.value })
-                }
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Question (English)
+                  </label>
+                  <Input
+                    placeholder="Question"
+                    value={formData.question}
+                    onChange={(e) =>
+                      setFormData({ ...formData, question: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Question (العربية)
+                  </label>
+                  <Input
+                    placeholder="السؤال"
+                    value={formData.question_ar}
+                    onChange={(e) =>
+                      setFormData({ ...formData, question_ar: e.target.value })
+                    }
+                    dir="rtl"
+                    className="font-arabic"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Answer (English)
+                  </label>
+                  <Textarea
+                    placeholder="Answer"
+                    value={formData.answer}
+                    onChange={(e) =>
+                      setFormData({ ...formData, answer: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Answer (العربية)
+                  </label>
+                  <Textarea
+                    placeholder="الإجابة"
+                    value={formData.answer_ar}
+                    onChange={(e) =>
+                      setFormData({ ...formData, answer_ar: e.target.value })
+                    }
+                    dir="rtl"
+                    className="font-arabic"
+                  />
+                </div>
+              </div>
               <Select
                 value={formData.service_id || "null"}
                 onValueChange={handleServiceChange}

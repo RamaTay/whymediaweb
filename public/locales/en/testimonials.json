@@ -1,0 +1,36 @@
+{  "title": "What Our",
+  "clients": "  Clients",
+  "say": " Say",
+ 
+  "subtitle": "Don't just take our word for it. Here's what our clients say about our services",
+  "testimonials": [
+    {
+      "name": "Jumana Al-Ali",
+      "role": "Marketing Director",
+       "emoji": "✨",
+      "company": "Tamkeen Digital",
+      "review": "Our experience with the team was excellent. From the start, we felt we were in expert hands. The website was delivered on time, and all edits were handled quickly and professionally. I highly recommend them for any company looking to build a strong digital presence."
+    },
+    {
+      "name": "Sami Al-Zahrani",
+      "role": "Chief Executive Officer",
+      "company": "Tech Nova",
+        "emoji": "🎨",
+      "review": "We needed a tech partner who truly understood our vision and could turn it into reality. This team not only delivered technical solutions but also helped simplify the user experience and significantly improve our platform’s performance. The difference after launch was remarkable."
+    },
+    {
+      "name": "Eman Al-Farese",
+      "role": "Product Manager",
+      "emoji": "😊",
+      "company": "Sustainable Solutions Company",
+      "review": "What I appreciated most was their attention to the small details that make a big difference. From design to branding, everything was done with care as if it were their own project. I felt confident throughout every step of the process."
+    },
+    {
+      "name": "Mohammed Qateet",
+      "role": "Creative Director",
+      "emoji": "🚀",
+      "company": "Decor Paints Company",
+      "review": "It's rare to find a team that combines artistic taste with technical understanding so well. Their professionalism and responsiveness were outstanding. The content and designs they delivered exceeded our expectations. I will definitely work with them again."
+    }
+  ]
+}

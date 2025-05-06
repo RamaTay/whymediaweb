@@ -1,0 +1,4 @@
+{
+  "get": "Get In ",
+  "touch": "Touch",
+"subtitle":"Have a project in mind or want to learn more about our services? Send us a message and we'll get back to you as soon as possible.","form":{"name":{"label":"Your Name","placeholder":"John Doe"},"email":{"label":"Email Address","placeholder":"john@example.com"},"subject":{"label":"Subject","placeholder":"How can we help you?"},"message":{"label":"Your Message","placeholder":"Tell us about your project or inquiry..."},"button":"Send Message","sending":"Sending..."},"validation":{"name":"Name is required","email":{"required":"Email is required","invalid":"Email is invalid"},"subject":"Subject is required","message":"Message is required"},"success":{"title":"Message Sent Successfully!","message":"Thank you for reaching out. We'll get back to you shortly."},"error":{"message":"There was an error sending your message. Please try again."}}

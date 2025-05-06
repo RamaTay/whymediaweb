@@ -10,23 +10,18 @@ import AppDevelopment3D from "./3d-objects/AppDevelopment3D";
 import { supabase } from "@/lib/supabaseClient";
 import { Database } from "@/types/database.types";
 import { Button } from "./ui/button";
+import { useTranslation } from "react-i18next";
 
-interface ServiceData {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  details: string;
-  skills: string[];
-}
-
-type Service = Database["public"]["Tables"]["Services"]["Row"];
+type Service = Database["public"]["Tables"]["Services"]["Row"] & {
+  name_ar?: string;
+  description_ar?: string;
+  technical_skills_tools_ar?: string[];
+};
 
 const ServiceDetailsPage = () => {
+  const { t, i18n } = useTranslation("services");
   const { serviceId } = useParams<{ serviceId: string }>();
-  const [activeSection, setActiveSection] = useState<string>(
-    serviceId || "graphic-design",
-  );
+  const [activeSection, setActiveSection] = useState<string>(serviceId || "");
   const [scrollY, setScrollY] = useState(0);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +48,7 @@ const ServiceDetailsPage = () => {
       window.removeEventListener("scroll", handleScroll);
       supabase.channel("services-changes").unsubscribe();
     };
-  }, [serviceId]);
+  }, [serviceId, i18n.language]);
 
   const setupRealtimeSubscription = () => {
     supabase
@@ -77,17 +72,23 @@ const ServiceDetailsPage = () => {
         .order("name");
 
       if (servicesError) throw servicesError;
-      setServices(servicesData || []);
 
-      if (servicesData && servicesData.length > 0) {
-        const serviceIds = servicesData.map((service) => service.id);
-        const { data: detailsData, error: detailsError } = await supabase
-          .from("ServiceDetails")
-          .select("*")
-          .in("service_id", serviceIds);
+      const localizedServices =
+        servicesData?.map((service) => {
+          if (i18n.language === "ar") {
+            return {
+              ...service,
+              name: service.name_ar || service.name,
+              description: service.description_ar || service.description,
+              technical_skills_tools:
+                service.technical_skills_tools_ar ||
+                service.technical_skills_tools,
+            };
+          }
+          return service;
+        }) || [];
 
-        if (detailsError) throw detailsError;
-      }
+      setServices(localizedServices);
     } catch (error: any) {
       setError(error.message);
       console.error("Error fetching services:", error);
@@ -101,118 +102,28 @@ const ServiceDetailsPage = () => {
     scale = 0.7,
     rotationSpeed = 1.2,
   ) => {
+    if (!serviceName)
+      return <AppDevelopment3D scale={scale} rotationSpeed={rotationSpeed} />;
+
     const name = serviceName.toLowerCase();
-    if (name.includes("web") || name.includes("development")) {
+    console.log("Service name for icon:", name); // لأغراض التصحيح
+
+    if (
+      name.includes("web") ||
+      name.includes("development") ||
+      name.includes("تطوير")
+    ) {
       return <WebDevelopment3D scale={scale} rotationSpeed={rotationSpeed} />;
-    } else if (name.includes("graphic") || name.includes("design")) {
+    } else if (name.includes("graphic") || name.includes("جرافيك")) {
       return <DesignServices3D scale={scale} rotationSpeed={rotationSpeed} />;
-    } else if (name.includes("logo")) {
+    } else if (name.includes("logo") || name.includes("شعار")) {
       return <LogoDesign3D scale={scale} rotationSpeed={rotationSpeed} />;
-    } else if (name.includes("content")) {
+    } else if (name.includes("content") || name.includes("محتوى")) {
       return <ContentCreation3D scale={scale} rotationSpeed={rotationSpeed} />;
     } else {
       return <AppDevelopment3D scale={scale} rotationSpeed={rotationSpeed} />;
     }
   };
-
-  // Fallback static services
-  const staticServices: ServiceData[] = [
-    {
-      id: "graphic-design",
-      title: "Graphic Design",
-      description:
-        "Eye-catching visuals and designs that communicate your brand's message effectively.",
-      icon: <DesignServices3D scale={0.7} rotationSpeed={1.2} />,
-      details:
-        "Our graphic design services focus on creating visually appealing and effective designs that help your brand stand out.",
-      skills: [
-        "Adobe Photoshop",
-        "Adobe Illustrator",
-        "Adobe InDesign",
-        "Figma",
-        "Sketch",
-        "Color Theory",
-        "Typography",
-        "Layout Design",
-      ],
-    },
-    {
-      id: "web-development",
-      title: "Web Development",
-      description:
-        "Custom websites and web applications built with the latest technologies.",
-      icon: <WebDevelopment3D scale={0.7} rotationSpeed={1.2} />,
-      details:
-        "Our web development team creates responsive, user-friendly websites and applications that provide an exceptional user experience.",
-      skills: [
-        "HTML5",
-        "CSS3",
-        "JavaScript",
-        "React",
-        "Node.js",
-        "PHP",
-        "WordPress",
-        "Shopify",
-        "SEO",
-        "Responsive Design",
-        "Web Accessibility",
-      ],
-    },
-    {
-      id: "logo-design",
-      title: "Logo Design",
-      description:
-        "Professional and memorable logos that capture your brand's essence.",
-      icon: <LogoDesign3D scale={0.7} rotationSpeed={1.2} />,
-      details:
-        "Our logo design service creates distinctive, versatile logos that communicate your brand's values and personality.",
-      skills: [
-        "Brand Identity",
-        "Typography",
-        "Vector Illustration",
-        "Color Theory",
-        "Adobe Illustrator",
-        "Logo Variations",
-        "Brand Guidelines",
-      ],
-    },
-    {
-      id: "content-creation",
-      title: "Content Creation",
-      description:
-        "Engaging and SEO-optimized content that resonates with your audience.",
-      icon: <ContentCreation3D scale={0.7} rotationSpeed={1.2} />,
-      details:
-        "Our content creation services help you tell your brand's story in a compelling way.",
-      skills: [
-        "Copywriting",
-        "Blog Writing",
-        "SEO Content",
-        "Email Marketing",
-        "Social Media Content",
-        "Content Strategy",
-        "Editing",
-        "Proofreading",
-      ],
-    },
-    {
-      id: "social-media-management",
-      title: "Social Media Management",
-      description:
-        "Strategic social media presence that builds community and drives engagement.",
-      icon: <AppDevelopment3D scale={0.7} rotationSpeed={1.2} />,
-      details:
-        "Our social media management services help you build and maintain a strong presence.",
-      skills: [
-        "Social Media Strategy",
-        "Content Calendar Planning",
-        "Community Management",
-        "Social Media Analytics",
-        "Paid Social Campaigns",
-        "Influencer Outreach",
-      ],
-    },
-  ];
 
   const handleSectionClick = (id: string) => {
     setActiveSection(id);
@@ -221,6 +132,46 @@ const ServiceDetailsPage = () => {
       element.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4 text-red-500">
+            {t("errorLoading", "Error Loading Services")}
+          </h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <Button onClick={fetchServices}>{t("tryAgain", "Try Again")}</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (services.length === 0) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">
+            {t("noServices", "No Services Available")}
+          </h2>
+          <p className="text-gray-600">
+            {t(
+              "noServicesDescription",
+              "Please check back later or contact support.",
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -258,170 +209,101 @@ const ServiceDetailsPage = () => {
             className="text-center max-w-3xl mx-auto"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              <span className="text-black">Our </span>
-              <span className="text-yellow-400">Services</span>
+              {t("ourServices", "Our ")}
+
+              <span className="text-yellow-500">
+                {t("services", "Services")}
+              </span>
             </h2>
             <p className="text-xl text-gray-600 mb-8">
-              Explore our comprehensive range of digital services designed to
-              help your business thrive.
+              {t(
+                "subtitle",
+                "Explore our comprehensive range of digital services designed to help your business thrive.",
+              )}
             </p>
           </motion.div>
 
           {/* Service Navigation */}
           <div className="flex flex-wrap justify-center gap-4 mt-8">
-            {loading ? (
-              <div className="flex justify-center py-4 w-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-yellow-400"></div>
-              </div>
-            ) : services.length > 0 ? (
-              services.map((service) => (
-                <motion.button
-                  key={service.id}
-                  onClick={() => handleSectionClick(service.id)}
-                  className={`px-6 py-3 rounded-full transition-all ${activeSection === service.id ? "bg-yellow-400 text-white shadow-md" : "bg-white text-gray-700 hover:bg-gray-100"}`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {service.name}
-                </motion.button>
-              ))
-            ) : (
-              staticServices.map((service) => (
-                <motion.button
-                  key={service.id}
-                  onClick={() => handleSectionClick(service.id)}
-                  className={`px-6 py-3 rounded-full transition-all ${activeSection === service.id ? "bg-yellow-400 text-white shadow-md" : "bg-white text-gray-700 hover:bg-gray-100"}`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {service.title}
-                </motion.button>
-              ))
-            )}
+            {services.map((service) => (
+              <motion.button
+                key={service.id}
+                onClick={() => handleSectionClick(service.id)}
+                className={`px-6 py-3 rounded-full transition-all ${activeSection === service.id ? "bg-yellow-400 text-white shadow-md" : "bg-white text-gray-700 hover:bg-gray-100"}`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {service.name}
+              </motion.button>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Service Details Sections */}
       <div className="container mx-auto px-4 py-16">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
-          </div>
-        ) : error ? (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-red-500 mb-4">
-              Error Loading Services
-            </h2>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <Button onClick={fetchServices}>Try Again</Button>
-          </div>
-        ) : services.length > 0 ? (
-          <div>
-            {services.map((service) => (
-              <section
-                key={service.id}
-                id={service.id}
-                className="mb-24 scroll-mt-24"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                  <div className="lg:col-span-4 flex justify-center">
-                    <motion.div
-                      whileHover={{ scale: 1.05, rotate: 5 }}
-                      className="w-64 h-64"
-                    >
-                      {getServiceIcon(service.name || "", 0.8, 1)}
-                    </motion.div>
-                  </div>
-                  <div className="lg:col-span-8">
-                    <h2 className="text-3xl font-bold mb-4">{service.name}</h2>
-                    <p className="text-lg text-gray-600 mb-6">
-                      {service.description}
-                    </p>
+        {services.map((service) => (
+          <section
+            key={service.id}
+            id={service.id}
+            className="mb-24 scroll-mt-24"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              <div className="lg:col-span-4 flex justify-center">
+                <motion.div
+                  whileHover={{ scale: 1.05, rotate: 5 }}
+                  className="w-64 h-64"
+                >
+                  {getServiceIcon(service.name || "", 0.8, 1)}
+                </motion.div>
+              </div>
+              <div className="lg:col-span-8">
+                <h2
+                  className="text-3xl font-bold mb-4"
+                  dir={i18n.language === "ar" ? "rtl" : "ltr"}
+                >
+                  {service.name}
+                </h2>
+                <p
+                  className="text-lg text-gray-600 mb-6"
+                  dir={i18n.language === "ar" ? "rtl" : "ltr"}
+                >
+                  {service.description}
+                </p>
 
-                    {service.technical_skills_tools &&
-                      service.technical_skills_tools.length > 0 && (
-                        <div className="mb-8">
-                          <h3 className="text-xl font-semibold mb-3">
-                            Technical Skills & Tools
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
-                            {service.technical_skills_tools.map(
-                              (skill, index) => (
-                                <span
-                                  key={index}
-                                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                                >
-                                  {skill}
-                                </span>
-                              ),
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                    <Link to={`/service/${service.id}`}>
-                      <Button className="bg-yellow-400 hover:bg-yellow-500 text-white">
-                        View Details
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </section>
-            ))}
-          </div>
-        ) : (
-          <div>
-            {staticServices.map((service) => (
-              <section
-                key={service.id}
-                id={service.id}
-                className="mb-24 scroll-mt-24"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                  <div className="lg:col-span-4 flex justify-center">
-                    <motion.div
-                      whileHover={{ scale: 1.05, rotate: 5 }}
-                      className="w-64 h-64"
-                    >
-                      {service.icon}
-                    </motion.div>
-                  </div>
-                  <div className="lg:col-span-8">
-                    <h2 className="text-3xl font-bold mb-4">{service.title}</h2>
-                    <p className="text-lg text-gray-600 mb-6">
-                      {service.description}
-                    </p>
-
+                {service.technical_skills_tools &&
+                  service.technical_skills_tools.length > 0 && (
                     <div className="mb-8">
-                      <h3 className="text-xl font-semibold mb-3">
-                        Technical Skills & Tools
+                      <h3
+                        className="text-xl font-semibold mb-3"
+                        dir={i18n.language === "ar" ? "rtl" : "ltr"}
+                      >
+                        {t("technicalSkills", "Technical Skills & Tools")}
                       </h3>
                       <div className="flex flex-wrap gap-2">
-                        {service.skills.map((skill, index) => (
+                        {service.technical_skills_tools.map((skill, index) => (
                           <span
                             key={index}
                             className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                            dir={i18n.language === "ar" ? "rtl" : "ltr"}
                           >
                             {skill}
                           </span>
                         ))}
                       </div>
                     </div>
+                  )}
 
-                    <Link to={`/service/${service.id}`}>
-                      <Button className="bg-yellow-400 hover:bg-yellow-500 text-white">
-                        Learn More
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </section>
-            ))}
-          </div>
-        )}
+                <Link to={`/service/${service.id}`}>
+                  <Button className="bg-yellow-400 hover:bg-yellow-500 text-white">
+                    {t("viewDetails", "View Details")}
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );

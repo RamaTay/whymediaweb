@@ -25,13 +25,13 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       <main ref={mainRef}>
-        <section id="hero" className="min-h-screen" ref={heroRef}>
+        <section id="hero" className="min-h-screen scroll-mt-20" ref={heroRef}>
           <EnhancedHeroSection scrollY={scrollPosition} />
         </section>
 
         <section
           id="services"
-          className="py-20 bg-gray-50 relative"
+          className="py-20 bg-gray-50 relative scroll-mt-20"
           ref={servicesRef}
         >
           <ServicesSection />
@@ -39,7 +39,7 @@ const Home = () => {
 
         <section
           id="testimonials"
-          className="py-20 relative"
+          className="py-20 relative scroll-mt-20"
           ref={testimonialsRef}
         >
           <TestimonialsSection />
@@ -47,7 +47,7 @@ const Home = () => {
 
         <section
           id="contact"
-          className="py-20 bg-gray-50 relative"
+          className="py-20 bg-gray-50 relative scroll-mt-20"
           ref={contactRef}
         >
           <ContactSection />
